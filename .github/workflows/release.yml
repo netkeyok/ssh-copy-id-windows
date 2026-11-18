@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build and publish
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $version = & target/release/ssh-copy-id.exe --version
+          Write-Host $version
+          if ($version -notmatch '^ssh-copy-id \d+\.\d+\.\d+') {
+              throw "Unexpected --version output: $version"
+          }
+
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash target/release/ssh-copy-id.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  ssh-copy-id.exe" | Set-Content -Path target/release/ssh-copy-id.exe.sha256 -Encoding ascii
+          Get-Content target/release/ssh-copy-id.exe.sha256
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/ssh-copy-id.exe
+            target/release/ssh-copy-id.exe.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true
