@@ -17,6 +17,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify tag matches Cargo.toml
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $match = Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1
+          $cargoVersion = $match.Matches[0].Groups[1].Value
+          Write-Host "tag=$tag cargo=$cargoVersion"
+          if ($tag -ne $cargoVersion) {
+              throw "Tag '$tag' does not match Cargo.toml version '$cargoVersion'"
+          }
+
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Build

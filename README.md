@@ -56,6 +56,14 @@ Downloaded and reviewed the script first? Run it locally:
 1. Download `ssh-copy-id.exe` from the [latest release](https://github.com/netkeyok/ssh-copy-id-windows/releases/latest).
 2. Put it in a folder on your `PATH`, for example `%LOCALAPPDATA%\Programs\ssh-copy-id`.
 
+Every release ships a `ssh-copy-id.exe.sha256` next to the executable, so you
+can check the download first:
+
+```powershell
+(Get-FileHash .\ssh-copy-id.exe -Algorithm SHA256).Hash.ToLower()
+Get-Content .\ssh-copy-id.exe.sha256
+```
+
 ### From source
 
 ```powershell
@@ -137,6 +145,20 @@ cargo build --release
 
 Releases are built by GitHub Actions on every `v*` tag; the workflow also
 publishes a SHA-256 checksum next to the executable.
+
+## Releasing
+
+Do not build release assets by hand — let CI do it:
+
+```powershell
+# bump "version" in Cargo.toml first, then
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The `Release` workflow checks that the tag matches `version` in `Cargo.toml`,
+builds on `windows-latest`, writes `ssh-copy-id.exe.sha256` and publishes both
+as release assets. `install.ps1` always picks up `releases/latest`.
 
 ## Uninstall
 
